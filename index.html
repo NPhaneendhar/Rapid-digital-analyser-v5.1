@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Forensic Toolkit</title>
+    <script src="https://cdn.jsdelivr.net/npm/exifreader@4.0.0/dist/exif-reader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a237e;
+            --primary-dark: #0f1342;
+            --primary-light: #303f9f;
+            --secondary: #4fc3f7;
+            --secondary-dark: #0288d1;
+            --accent: #ff4081;
+            --accent-dark: #c60055;
+            --dark: #0d0f1c;
+            --darker: #07090f;
+            --dark-card: #1a2035;
+            --light: #f5f5f7;
+            --lighter: #ffffff;
+            --success: #00c853;
+            --warning: #ffab00;
+            --danger: #ff1744;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.16), 0 4px 6px rgba(0,0,0,0.23);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--darker), var(--dark));
+            color: var(--light);
+            min-height: 100vh;
+            line-height: 1.6;
+            font-family: 'Inter', sans-serif;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(79, 195, 247, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 64, 129, 0.05) 0%, transparent 20%);
+            padding-bottom: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 4px solid var(--accent);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 64, 129, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 70% 70%, rgba(79, 195, 247, 0.1) 0%, transparent 40%);
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-weight: 300;
+            font-size: 1.2rem;
+            opacity: 0.9;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-left: 12px;
+            font-weight: 600;
+            vertical-align: middle;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 30px;
+            margin-bottom: 3rem;
+        }
+
+        .tool-card {
+            background: rgba(26, 35, 126, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            padding: 2.2rem;
+            transition: var(--transition);
+            border: 1px solid rgba(79, 195, 247, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(79, 195, 247, 0.1) 0%, transparent 70%);
+            transform: rotate(30deg);
+            z-index: -1;
+            transition: var(--transition);
+        }
+
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(79, 195, 247, 0.4);
+        }
+
+        .tool-card:hover::before {
+            transform: rotate(45deg);
+        }
+
+        .tool-card h2 {
+            color: var(--secondary);
+            margin-bottom: 1.8rem;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            font-weight: 600;
+        }    
+
+        .tool-card h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--accent);
+            transition: var(--transition);
+        }
+
+        .tool-card:hover h2::after {
+            width: 100px;
+        }
+
+        .tool-card h2 .icon {
+            font-size: 1.8rem;
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(79, 195, 247, 0.1);
+            border-radius: 50%;
+            padding: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 1.8rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.8rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(13, 15, 28, 0.8);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: var(--border-radius-sm);
+            color: white;
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.2);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 10px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0.3) 0%,
+                rgba(255, 255, 255, 0) 60%
+            );
+            transform: rotate(30deg);
+            transition: var(--transition);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(79, 195, 247, 0.4);
+        }
+
+        button:hover::after {
+            left: 100%;
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .output {
+            background: rgba(13, 15, 28, 0.8);
+            border: 1px solid rgba(79, 195, 247, 0.2);
+            border-radius: var(--border-radius-sm);
+            padding: 18px;
+            margin-top: 1.5rem;
+            min-height: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            flex-grow: 1;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .output::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, var(--secondary), var(--accent));
+        }
+
+        .success {
+            color: var(--success);
+        }
+
+        .warning {
+            color: var(--warning);
+        }
+
+        .danger {
+            color: var(--danger);
+        }
+
+        .info {
+            color: var(--secondary);
+        }
+
+        .powered-by {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .powered-by a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: var(--transition);
+            border-bottom: 1px dashed var(--secondary);
+            padding-bottom: 2px;
+            font-weight: 500;
+        }
+
+        .powered-by a:hover {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            margin-top: 3rem;
+            background: rgba(13, 15, 28, 0.8);
+            border-top: 1px solid rgba(79, 195, 247, 0.2);
+        }
+
+        .share-section {
+            background: rgba(26, 35, 126, 0.7);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            margin-top: 3rem;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .share-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(79, 195, 247, 0.1) 0%, transparent 60%);
+            z-index: -1;
+        }
+
+        .share-section h3 {
+            margin-bottom: 1.5rem;
+            color: var(--secondary);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .qr-container {
+            margin: 25px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: var(--shadow-md);
+        }
+
+        .share-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .share-btn {
+            padding: 12px 24px;
+            border-radius: var(--border-radius-sm);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--secondary);
+            color: var(--secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .share-btn:hover {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        .tool-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-active {
+            background-color: var(--success);
+        }
+
+        .status-inactive {
+            background-color: var(--danger);
+        }
+
+        .conclusion-box {
+            background: rgba(26, 35, 126, 0.7);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            margin-top: 2rem;
+            border: 1px solid var(--accent);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .conclusion-box h2 {
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .conclusion-content {
+            background: rgba(13, 15, 28, 0.8);
+            border-radius: var(--border-radius-sm);
+            padding: 1.8rem;
+            min-height: 150px;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* Tool-specific enhancements */
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload-button {
+            background: rgba(79, 195, 247, 0.1);
+            border: 1px dashed rgba(79, 195, 247, 0.4);
+            border-radius: var(--border-radius-sm);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .file-upload-button:hover {
+            background: rgba(79, 195, 247, 0.2);
+            border-color: var(--secondary);
+        }
+
+        .file-upload-button i {
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .file-upload-button span {
+            color: var(--light);
+            font-size: 0.9rem;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .selected-file {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .selected-file i {
+            color: var(--accent);
+        }
+
+        /* Progress indicator */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(79, 195, 247, 0.1);
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, var(--secondary), var(--accent));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark-card);
+            color: var(--light);
+            text-align: center;
+            border-radius: var(--border-radius-sm);
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(79, 195, 247, 0.2);
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .tool-grid {
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+           
+            h1 {
+                font-size: 2.2rem;
+            }
+           
+            .subtitle {
+                font-size: 1rem;
+            }
+           
+            .tool-card {
+                padding: 1.8rem;
+            }
+           
+            button {
+                padding: 14px 20px;
+            }
+           
+            .share-options {
+                flex-direction: column;
+                align-items: center;
+            }
+           
+            .share-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            header {
+                padding: 2rem 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .version-badge {
+                font-size: 0.8rem;
+                padding: 3px 10px;
+            }
+
+            .tool-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>
+                    FORENSIC SCIENCE DIGITAL TOOLKIT
+                    <span class="version-badge" style="background:none; color:#111; font-weight:700;">v5.1</span>
+                </h1>
+                <p class="subtitle">Comprehensive digital investigation toolkit for forensic professionals with enhanced tools and security features</p>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <div class="tool-grid">
+            <!-- Tool 1: Advanced Metadata Analyzer -->
+            <div class="tool-card">
+                <h2><span class="icon">📸</span> Advanced Metadata Analyzer</h2>
+                <div class="input-group">
+                    <label for="photo-upload">Select Image/File</label>
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-button">
+                            <i>📁</i>
+                            <span>Click to browse or drag & drop files</span>
+                        </div>
+                        <input type="file" id="photo-upload" accept="image/*, .pdf, .doc, .docx, .xls, .xlsx">
+                    </div>
+                    <div id="selected-photo" class="selected-file" style="display:none;">
+                        <i>✓</i> <span></span>
+                    </div>
+                    <div class="progress-container" id="metadata-progress">
+                        <div class="progress-bar"></div>
+                    </div>
+                </div>
+                <button onclick="analyzeMetadata()">Analyze Metadata</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 3.2</span>
+                </div>
+                <div id="metadata-output" class="output">Select a file to analyze metadata...</div>
+                <p class="powered-by">Powered by <a href="https://exiftool.org/" target="_blank">ExifReader.js</a></p>
+            </div>
+            
+            <!-- Tool 2: File Hash Generator -->
+            <div class="tool-card">
+                <h2><span class="icon">🔐</span> File Hash Generator</h2>
+                <div class="input-group">
+                    <label for="file-upload">Select File</label>
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-button">
+                            <i>📁</i>
+                            <span>Click to browse or drag & drop files</span>
+                        </div>
+                        <input type="file" id="file-upload">
+                    </div>
+                    <div id="selected-hash-file" class="selected-file" style="display:none;">
+                        <i>✓</i> <span></span>
+                    </div>
+                    <div class="progress-container" id="hash-progress">
+                        <div class="progress-bar"></div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="hash-algorithm">Hash Algorithm</label>
+                    <select id="hash-algorithm">
+                        <option value="md5">MD5</option>
+                        <option value="sha1">SHA-1</option>
+                        <option value="sha256">SHA-256</option>
+                        <option value="sha512">SHA-512</option>
+                    </select>
+                </div>
+                <button onclick="generateHash()">Generate Hash</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 2.5</span>
+                </div>
+                <div id="hash-output" class="output">File hash will appear here...</div>
+                <p class="powered-by">Compare with <a href="https://www.virustotal.com/" target="_blank">VirusTotal</a></p>
+            </div>
+            
+            <!-- Tool 3: Suspicious File Detector -->
+            <div class="tool-card">
+                <h2><span class="icon">🕵️</span> Suspicious File Detector</h2>
+                <div class="input-group">
+                    <label for="suspicious-file">Upload File for Analysis</label>
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-button">
+                            <i>📁</i>
+                            <span>Click to browse or drag & drop files</span>
+                        </div>
+                        <input type="file" id="suspicious-file">
+                    </div>
+                    <div id="selected-suspicious-file" class="selected-file" style="display:none;">
+                        <i>✓</i> <span></span>
+                    </div>
+                    <div class="progress-container" id="suspicious-progress">
+                        <div class="progress-bar"></div>
+                    </div>
+                </div>
+                <button onclick="checkSuspiciousFile()">Analyze File</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 4.0</span>
+                </div>
+                <div id="suspicious-output" class="output">Suspicious content analysis...</div>
+                <p class="powered-by">Uses <a href="https://github.com/Yara-Rules/rules" target="_blank">YARA rules</a></p>
+            </div>
+            
+            <!-- Tool 4: Password Strength Auditor -->
+            <div class="tool-card">
+                <h2><span class="icon">🛡️</span> Password Strength Auditor</h2>
+                <div class="input-group">
+                    <label for="password-input">Enter Password</label>
+                    <input type="password" id="password-input" placeholder="Password to analyze">
+                </div>
+                <div class="input-group">
+                    <label for="password-visibility">
+                        <input type="checkbox" id="password-visibility"> Show password
+                    </label>
+                </div>
+                <button type="button" id="password-analyze-btn" onclick="checkPasswordStrength()">Analyze Password</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 2.8</span>
+                </div>
+                <div id="password-output" class="output">Password analysis results...</div>
+                <p class="powered-by">Check <a href="https://haveibeenpwned.com/Passwords" target="_blank">breached passwords</a></p>
+            </div>
+            
+            <!-- Tool 5: Steganography Detector -->
+            <div class="tool-card">
+                <h2><span class="icon">🖼️</span> Steganography Detector</h2>
+                <div class="input-group">
+                    <label for="steg-file">Upload Image to Check</label>
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-button">
+                            <i>🖼️</i>
+                            <span>Click to browse or drag & drop images</span>
+                        </div>
+                        <input type="file" id="steg-file" accept="image/*">
+                    </div>
+                    <div id="selected-steg-file" class="selected-file" style="display:none;">
+                        <i>✓</i> <span></span>
+                    </div>
+                    <div class="progress-container" id="steg-progress">
+                        <div class="progress-bar"></div>
+                    </div>
+                </div>
+                <button onclick="checkForSteganography()">Detect Hidden Data</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 3.1</span>
+                </div>
+                <div id="steg-output" class="output">Steganalysis results...</div>
+                <p class="powered-by">Based on <a href="https://github.com/zed-0xff/zsteg" target="_blank">zsteg</a> techniques</p>
+            </div>
+            
+            <!-- Tool 6: Text Steganography Extractor -->
+            <div class="tool-card">
+                <h2><span class="icon">📝</span> Text Steganography Extractor</h2>
+                <div class="input-group">
+                    <label for="text-input">Enter Text with Hidden Message</label>
+                    <textarea id="text-input" placeholder="Paste text containing hidden message..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="extraction-method">Extraction Method</label>
+                    <select id="extraction-method">
+                        <option value="first-letters">First Letters of Words</option>
+                        <option value="last-letters">Last Letters of Words</option>
+                        <option value="every-nth">Every Nth Character</option>
+                        <option value="brackets">Text in Brackets</option>
+                        <option value="whitespace-bits">Whitespace Bits (space/tab/line)</option>
+                        <option value="zero-width">Zero-Width Characters</option>
+                    </select>
+                </div>
+                <div class="input-group" id="nth-group" style="display:none;">
+                    <label for="nth-value">N Value (for Every Nth Character)</label>
+                    <input type="number" id="nth-value" min="1" max="100" value="3">
+                </div>
+                <button onclick="extractHiddenText()">Extract Hidden Message</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 1.3</span>
+                </div>
+                <div id="text-output" class="output"><pre>Extracted message will appear here...</pre></div>
+                <p class="powered-by">
+                    This tool supports advanced text steganography extraction methods including whitespace and zero-width character decoding for improved results.
+                </p>
+            </div>
+            
+            <!-- Tool 7: Network Forensic Toolkit -->
+            <div class="tool-card">
+                <h2><span class="icon">🌐</span> Network Forensic Toolkit</h2>
+                <div class="input-group">
+                    <label for="network-tool">Select Tool</label>
+                    <select id="network-tool">
+                        <option value="ping">Ping Test</option>
+                        <option value="traceroute">Traceroute</option>
+                        <option value="whois">WHOIS Lookup</option>
+                        <option value="dns">DNS Records</option>
+                        <option value="headers">HTTP Headers</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="network-input">IP/Domain/URL</label>
+                    <input type="text" id="network-input" placeholder="example.com or 8.8.8.8">
+                </div>
+                <button onclick="runNetworkTool()">Execute</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 3.5</span>
+                </div>
+                <div id="network-output" class="output">Network analysis results...</div>
+                <p class="powered-by">Reference: <a href="https://mxtoolbox.com/" target="_blank">MXToolBox</a></p>
+            </div>
+            
+            <!-- Tool 8: URL Analyzer -->
+            <div class="tool-card">
+                <h2><span class="icon">🔗</span> URL Analyzer</h2>
+                <div class="input-group">
+                    <label for="url-input">Enter URL to Analyze</label>
+                    <input type="text" id="url-input" placeholder="https://example.com">
+                </div>
+                <button onclick="analyzeURL()">Analyze URL</button>
+                <div class="tool-status">
+                    <span><span class="status-indicator status-active"></span> Active</span>
+                    <span>Version 1.2</span>
+                </div>
+                <div id="url-output" class="output">URL analysis results...</div>
+                <p class="powered-by">Check <a href="https://www.urlvoid.com/" target="_blank">URLVoid</a></p>
+            </div>
+        </div>
+        
+        <!-- Final Conclusion Box -->
+        <div class="conclusion-box">
+            <h2>Final Forensic Conclusion</h2>
+            <div id="conclusion-output" class="conclusion-content">
+                Analysis results from tools will be summarized here...
+            </div>
+            <button onclick="generateConclusion()" style="margin-top: 20px;">Generate Final Report</button>
+        </div>
+        
+        <!-- Sharing Section -->
+        <div class="share-section">
+            <h3>SHARE THIS TOOLKIT</h3>
+            <p>You can download your forensic report below:</p>
+            <div class="share-options">
+                <button class="share-btn" onclick="downloadToolkit()">Download Toolkit</button>
+            </div>
+        </div>
+        <script>
+            // Remove QR/link update logic, keep only downloadToolkit
+            function downloadToolkit() {
+                const report = document.getElementById('conclusion-output').textContent;
+                const blob = new Blob([report], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'forensic_report.txt';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            }
+        </script>
+    </div>
+    <footer>
+        <div class="container">
+            <p>© 2023 Digital Forensic Toolkit | Developed by N.Phaneendhar</p>
+            <p>For educational and professional forensic use only</p>
+        </div>
+    </footer>
+    <script>
+        // Initialize QR code when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            generateQR();
+            
+            // Password visibility toggle
+            const passwordVisibility = document.getElementById('password-visibility');
+            const passwordInput = document.getElementById('password-input');
+            if (passwordVisibility && passwordInput) {
+                passwordVisibility.addEventListener('change', function() {
+                    passwordInput.type = this.checked ? 'text' : 'password';
+                });
+            }
+            
+            // File upload display for each tool
+            setupFileUpload('photo-upload', 'selected-photo');
+            setupFileUpload('file-upload', 'selected-hash-file');
+            setupFileUpload('suspicious-file', 'selected-suspicious-file');
+            setupFileUpload('steg-file', 'selected-steg-file');
+            
+            // Show/hide Nth value input
+            const methodSel = document.getElementById('extraction-method');
+            const nthGroup = document.getElementById('nth-group');
+            if (methodSel) {
+                methodSel.addEventListener('change', function() {
+                    nthGroup.style.display = (this.value === 'every-nth') ? '' : 'none';
+                });
+            }
+        });
+
+        function setupFileUpload(inputId, displayId) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+            
+            if (input && display) {
+                input.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        display.style.display = 'flex';
+                        display.querySelector('span').textContent = this.files[0].name;
+                    } else {
+                        display.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Store analysis results
+        const analysisResults = {
+            metadata: null,
+            fileHash: null,
+            suspiciousFile: null,
+            password: null,
+            steganography: null,
+            hiddenText: null,
+            network: null,
+            url: null
+        };
+
+        // QR Code Generation
+        function generateQR() {
+            const qrContainer = document.getElementById('qr-code');
+            qrContainer.innerHTML = '';
+            
+            const currentUrl = window.location.href;
+            const qr = qrcode(0, 'L');
+            qr.addData(currentUrl);
+            qr.make();
+            
+            const qrImg = document.createElement('img');
+            qrImg.src = qr.createDataURL(10, 0);
+            qrImg.alt = 'QR Code for Forensic Toolkit';
+            qrContainer.appendChild(qrImg);
+            
+            document.getElementById('share-link').textContent = currentUrl;
+        }
+
+        // Generate QR for custom link
+        function generateCustomQR() {
+            const customUrl = prompt("Enter the URL to generate a QR code for:", window.location.href);
+            if (!customUrl) return;
+            const qrContainer = document.getElementById('qr-code');
+            qrContainer.innerHTML = '';
+            const qr = qrcode(0, 'L');
+            qr.addData(customUrl);
+            qr.make();
+            const qrImg = document.createElement('img');
+            qrImg.src = qr.createDataURL(10, 0);
+            qrImg.alt = 'QR Code for Forensic Toolkit';
+            qrContainer.appendChild(qrImg);
+            document.getElementById('share-link').textContent = customUrl;
+        }
+
+        // Copy Share Link
+        function copyShareLink() {
+            const shareLink = document.getElementById('share-link').textContent;
+            navigator.clipboard.writeText(shareLink)
+                .then(() => {
+                    alert('Link copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+        }
+
+        // Helper functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat(bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+        }
+
+        function displayResults(results, element, title) {
+            let output = `=== ${title} ===\n\n`;
+            for (const [key, value] of Object.entries(results)) {
+                output += `${key}: ${value}\n`;
+            }
+            element.innerHTML = output;
+        }
+
+        // 1. Advanced Metadata Analyzer
+        async function analyzeMetadata() {
+            const fileInput = document.getElementById('photo-upload');
+            const output = document.getElementById('metadata-output');
+            const progressContainer = document.getElementById('metadata-progress');
+            const progressBar = progressContainer.querySelector('.progress-bar');
+           
+            if (!fileInput.files[0]) {
+                output.innerHTML = '<span class="danger">[!] Please select a file first</span>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            output.innerHTML = '<span class="info">[+] Analyzing file metadata... Please wait</span>';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '30%';
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                progressBar.style.width = '60%';
+                const tags = ExifReader.load(arrayBuffer);
+                progressBar.style.width = '90%';
+               
+                let result = `=== METADATA ANALYSIS REPORT ===\n\n`;
+                result += `File Name: ${file.name}\n`;
+                result += `File Size: ${formatFileSize(file.size)}\n`;
+                result += `File Type: ${file.type || "Unknown"}\n`;
+                result += `Last Modified: ${new Date(file.lastModified).toLocaleString()}\n\n`;
+                
+                if (Object.keys(tags).length > 0) {
+                    result += "=== EXIF METADATA ===\n";
+                    for (const [key, value] of Object.entries(tags)) {
+                        if (typeof value.value !== 'object' || value.value === null) {
+                            const displayValue = value.description ||
+                                                (Array.isArray(value.value) ? value.value.join(', ') : value.value);
+                            result += `${key}: ${displayValue}\n`;
+                        }
+                    }
+                } else {
+                    result += "No EXIF metadata found in this file\n";
+                }
+                
+                const risk = analyzeFileRisk(file.name, file.type);
+                const recommendations = getFileSecurityRecommendations(file.type);
+               
+                result += `\nPotential Risks: ${risk}\n`;
+                result += `Security Recommendations: ${recommendations}\n`;
+                output.innerHTML = result;
+               
+                analysisResults.metadata = {
+                    fileName: file.name,
+                    fileType: file.type,
+                    riskLevel: risk,
+                    recommendations: recommendations
+                };
+                
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 500);
+            } catch (error) {
+                output.innerHTML = `<span class="danger">[!] Error analyzing metadata: ${error.message}</span>`;
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        }
+       
+        function analyzeFileRisk(filename, filetype) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const riskyExtensions = ['exe', 'bat', 'cmd', 'js', 'vbs', 'ps1', 'jar', 'dll', 'scr', 'msi'];
+           
+            if (riskyExtensions.includes(ext)) {
+                return "High - Potentially executable file";
+            }
+           
+            if (filename.match(/\.[^.]+\.(exe|js|vbs|bat|cmd|ps1)$/i)) {
+                return "Very High - Possible double extension trick";
+            }
+           
+            return "Low - No obvious risks detected";
+        }
+       
+        function getFileSecurityRecommendations(fileType) {
+            if (!fileType) return "Unknown file type - proceed with caution";
+           
+            const type = fileType.split('/')[0];
+            const recommendations = {
+                'image': [
+                    "Check for hidden metadata",
+                    "Verify image source",
+                    "Look for steganography"
+                ],
+                'application': [
+                    "Scan for malware",
+                    "Verify digital signature",
+                    "Check file hashes"
+                ],
+                'text': [
+                    "Check for malicious scripts",
+                    "Verify content integrity"
+                ],
+                'default': [
+                    "Use antivirus scan",
+                    "Verify file origin",
+                    "Check file hashes"
+                ]
+            };
+            return recommendations[type] ?
+                recommendations[type].join('\n• ') :
+                recommendations['default'].join('\n• ');
+        }
+
+        // 2. File Hash Generator
+        async function generateHash() {
+            const fileInput = document.getElementById('file-upload');
+            const algorithm = document.getElementById('hash-algorithm').value;
+            const output = document.getElementById('hash-output');
+            const progressContainer = document.getElementById('hash-progress');
+            const progressBar = progressContainer.querySelector('.progress-bar');
+           
+            if (!fileInput.files[0]) {
+                output.innerHTML = '<span class="danger">[!] Please select a file first</span>';
+                return;
+            }
+            
+            output.innerHTML = '<span class="info">[+] Generating file hash... Please wait</span>';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '30%';
+            
+            try {
+                const file = fileInput.files[0];
+                progressBar.style.width = '60%';
+                const hash = await calculateFileHash(file, algorithm);
+                progressBar.style.width = '90%';
+               
+                const hashes = {
+                    "File Name": file.name,
+                    "File Size": formatFileSize(file.size),
+                    "Selected Algorithm": algorithm.toUpperCase(),
+                    "Generated Hash": hash,
+                    "Next Steps": "1. Compare with known good hashes\n2. Check against VirusTotal database"
+                };
+                displayResults(hashes, output, "FILE HASH REPORT");
+               
+                analysisResults.fileHash = {
+                    fileName: file.name,
+                    algorithm: algorithm,
+                    hash: hash
+                };
+                
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 500);
+            } catch (error) {
+                output.innerHTML = `<span class="danger">[!] Error generating hash: ${error.message}</span>`;
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        }
+
+        async function calculateFileHash(file, algorithm) {
+            const arrayBuffer = await file.arrayBuffer();
+            const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
+           
+            switch(algorithm) {
+                case 'md5':
+                    return CryptoJS.MD5(wordArray).toString();
+                case 'sha1':
+                    return CryptoJS.SHA1(wordArray).toString();
+                case 'sha256':
+                    return CryptoJS.SHA256(wordArray).toString();
+                case 'sha512':
+                    return CryptoJS.SHA512(wordArray).toString();
+                default:
+                    throw new Error('Unsupported algorithm');
+            }
+        }
+
+        // 3. Suspicious File Detector
+        async function checkSuspiciousFile() {
+            const fileInput = document.getElementById('suspicious-file');
+            const output = document.getElementById('suspicious-output');
+            const progressContainer = document.getElementById('suspicious-progress');
+            const progressBar = progressContainer.querySelector('.progress-bar');
+           
+            if (!fileInput.files[0]) {
+                output.innerHTML = '<span class="danger">[!] Please select a file first</span>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            output.innerHTML = '<span class="info">[+] Analyzing file for suspicious content... Please wait</span>';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '30%';
+            
+            try {
+                const arrayBuffer = await file.slice(0, 1024).arrayBuffer();
+                progressBar.style.width = '60%';
+                const header = new Uint8Array(arrayBuffer);
+                progressBar.style.width = '90%';
+               
+                let result = `=== SUSPICIOUS FILE ANALYSIS ===\n\n`;
+                result += `File Name: ${file.name}\n`;
+                result += `File Size: ${formatFileSize(file.size)}\n`;
+                result += `File Type: ${file.type || "Unknown"}\n\n`;
+               
+                result += "File Header (hex):\n";
+                for (let i = 0; i < Math.min(header.length, 64); i += 16) {
+                    const chunk = header.slice(i, i + 16);
+                    const hex = Array.from(chunk).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                    const ascii = Array.from(chunk).map(b =>
+                        b >= 32 && b <= 126 ? String.fromCharCode(b) : '.'
+                    ).join('');
+                    result += `${i.toString(16).padStart(4, '0')}: ${hex.padEnd(48)} ${ascii}\n`;
+                }
+               
+                const extensionAnalysis = checkFileExtension(file.name);
+                const magicNumbers = checkMagicNumbers(header, file.name);
+                const threats = analyzeFileThreats(file.name, header);
+                const recommendations = getThreatRecommendations(file.name);
+               
+                result += `\nExtension Analysis: ${extensionAnalysis}\n`;
+                result += `Magic Numbers: ${magicNumbers}\n`;
+                result += `Potential Threats: ${threats}\n`;
+                result += `Recommendations: ${recommendations}\n`;
+                output.innerHTML = result;
+               
+                analysisResults.suspiciousFile = {
+                    fileName: file.name,
+                    extensionAnalysis: extensionAnalysis,
+                    magicNumbers: magicNumbers,
+                    threats: threats,
+                    recommendations: recommendations
+                };
+                
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 500);
+            } catch (error) {
+                output.innerHTML = `<span class="danger">[!] Error analyzing file: ${error.message}</span>`;
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        }
+
+        function checkFileExtension(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const dangerousExtensions = ['exe', 'bat', 'cmd', 'js', 'vbs', 'ps1', 'jar'];
+            const suspiciousExtensions = ['doc', 'docx', 'xls', 'xlsx', 'pdf', 'rtf'];
+            
+            if (dangerousExtensions.includes(ext)) {
+                return "DANGEROUS - Executable file type";
+            }
+            
+            if (suspiciousExtensions.includes(ext)) {
+                return "SUSPICIOUS - Office documents can contain macros";
+            }
+            
+            if (filename.match(/\.[^.]+\.(exe|js|vbs|bat|cmd|ps1)$/i)) {
+                return "VERY DANGEROUS - Possible double extension trick";
+            }
+            
+            return "SAFE - No known dangerous extensions detected";
+        }
+
+        function checkMagicNumbers(header, filename) {
+            // Common file signatures
+            const signatures = {
+                'exe': '4D5A',
+                'pdf': '25504446',
+                'zip': '504B0304',
+                'png': '89504E47',
+                'jpg': 'FFD8FF',
+                'gif': '47494638'
+            };
+            
+            const hexHeader = Array.from(header.slice(0, 4)).map(b => 
+                b.toString(16).padStart(2, '0')
+            ).join('').toUpperCase();
+            
+            const ext = filename.split('.').pop().toLowerCase();
+            const expectedSig = signatures[ext];
+            
+            if (expectedSig && !hexHeader.startsWith(expectedSig)) {
+                return "WARNING - File signature doesn't match extension";
+            }
+            
+            return "OK - Signature matches extension or not checked";
+        }
+
+        function analyzeFileThreats(filename, header) {
+            const threats = [];
+            const hexHeader = Array.from(header).map(b => 
+                b.toString(16).padStart(2, '0')
+            ).join('').toUpperCase();
+            
+            // Check for PE header (executable)
+            if (hexHeader.includes('4D5A')) {
+                threats.push("PE executable file");
+            }
+            
+            // Check for script content
+            if (hexHeader.includes('3C6A617661736372697074') || 
+                hexHeader.includes('3C736372697074')) {
+                threats.push("Possible script content");
+            }
+            
+            // Check for Office macros
+            if (hexHeader.includes('D0CF11E0A1B11AE1')) {
+                threats.push("Office document (may contain macros)");
+            }
+            
+            return threats.length > 0 ? threats.join(', ') : "No obvious threats detected";
+        }
+
+        function getThreatRecommendations(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const dangerous = ['exe', 'bat', 'cmd', 'js', 'vbs', 'ps1', 'jar'];
+            
+            if (dangerous.includes(ext)) {
+                return "1. Do NOT execute this file\n2. Scan with antivirus\n3. Verify source";
+            }
+            
+            return "1. Scan with antivirus\n2. Verify file source\n3. Check file hashes";
+        }
+
+        // 4. Password Strength Auditor
+        function checkPasswordStrength() {
+            const passwordInput = document.getElementById('password-input');
+            const output = document.getElementById('password-output');
+            const password = passwordInput.value;
+            
+            if (!password) {
+                output.innerHTML = '<span class="danger">[!] Please enter a password first</span>';
+                return;
+            }
+            
+            const strength = calculatePasswordStrength(password);
+            const crackTime = estimateCrackTime(password);
+            const recommendations = getPasswordRecommendations(password);
+            
+            let result = `=== PASSWORD STRENGTH ANALYSIS ===\n\n`;
+            result += `Password: ${'*'.repeat(password.length)}\n`;
+            result += `Length: ${password.length} characters\n`;
+            result += `Strength: ${strength.score}/4 (${strength.label})\n`;
+            result += `Estimated Crack Time: ${crackTime}\n\n`;
+            result += `Complexity Analysis:\n`;
+            result += `- Contains lowercase: ${strength.hasLower ? '✓' : '✗'}\n`;
+            result += `- Contains uppercase: ${strength.hasUpper ? '✓' : '✗'}\n`;
+            result += `- Contains numbers: ${strength.hasNumber ? '✓' : '✗'}\n`;
+            result += `- Contains symbols: ${strength.hasSymbol ? '✓' : '✗'}\n\n`;
+            result += `Recommendations:\n${recommendations}\n`;
+                
+            output.innerHTML = result;
+            analysisResults.password = {
+                strength: strength.score,
+                crackTime: crackTime,
+                recommendations: recommendations
+            };
+        }
+
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            const hasLower = /[a-z]/.test(password);
+            const hasUpper = /[A-Z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            const hasSymbol = /[^a-zA-Z0-9]/.test(password);
+            
+            // Length scoring
+            if (password.length >= 12) score += 2;
+            else if (password.length >= 8) score += 1;
+            
+            // Complexity scoring
+            if (hasLower && hasUpper) score += 1;
+            if (hasNumber) score += 1;
+            if (hasSymbol) score += 1;
+            
+            // Cap at 4
+            score = Math.min(score, 4);
+            
+            const labels = [
+                "Very Weak",
+                "Weak",
+                "Moderate",
+                "Strong",
+                "Very Strong"
+            ];
+            
+            return {
+                score: score,
+                label: labels[score],
+                hasLower: hasLower,
+                hasUpper: hasUpper,
+                hasNumber: hasNumber,
+                hasSymbol: hasSymbol
+            };
+        }
+
+        function estimateCrackTime(password) {
+            // Very simplified estimation
+            const chars = 94; // Possible characters
+            const guessesPerSecond = 1e9; // 1 billion guesses/second
+            
+            const combinations = Math.pow(chars, password.length);
+            const seconds = combinations / guessesPerSecond;
+            
+            if (seconds < 1) return "Instantly";
+            if (seconds < 60) return "Seconds";
+            if (seconds < 3600) return "Minutes";
+            if (seconds < 86400) return "Hours";
+            if (seconds < 2592000) return "Days";
+            if (seconds < 31536000) return "Months";
+            return "Years";
+        }
+
+        function getPasswordRecommendations(password) {
+            const recs = [];
+            
+            if (password.length < 12) {
+                recs.push("Use at least 12 characters");
+            }
+            
+            if (!/[A-Z]/.test(password)) {
+                recs.push("Add uppercase letters");
+            }
+            
+            if (!/\d/.test(password)) {
+                recs.push("Add numbers");
+            }
+            
+            if (!/[^a-zA-Z0-9]/.test(password)) {
+                recs.push("Add special characters");
+            }
+            
+            if (recs.length === 0) {
+                return "Good password! Consider using a password manager.";
+            }
+            
+            return recs.map((r, i) => `${i+1}. ${r}`).join('\n');
+        }
+
+        // 5. Steganography Detector
+        async function checkForSteganography() {
+            const fileInput = document.getElementById('steg-file');
+            const output = document.getElementById('steg-output');
+            const progressContainer = document.getElementById('steg-progress');
+            const progressBar = progressContainer.querySelector('.progress-bar');
+            
+            if (!fileInput.files[0]) {
+                output.innerHTML = '<span class="danger">[!] Please select an image first</span>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            output.innerHTML = '<span class="info">[+] Analyzing image for hidden data... Please wait</span>';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '30%';
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                progressBar.style.width = '60%';
+                const view = new Uint8Array(arrayBuffer);
+                progressBar.style.width = '90%';
+                
+                let result = `=== STEGANALYSIS REPORT ===\n\n`;
+                result += `Image: ${file.name}\n`;
+                result += `Size: ${formatFileSize(file.size)}\n`;
+                result += `Type: ${file.type || "Unknown"}\n\n`;
+                
+                // Check for common steganography indicators
+                const indicators = {
+                    'LSB': checkLSB(view),
+                    'EOF': checkEOF(view),
+                    'EXIF': checkSuspiciousEXIF(view),
+                    'Header': checkHeaderAnomalies(view)
+                };
+                
+                result += "Steganography Indicators:\n";
+                for (const [method, found] of Object.entries(indicators)) {
+                    result += `${method}: ${found ? '⚠️ Possible' : 'Not detected'}\n`;
+                }
+                
+                const conclusion = Object.values(indicators).some(v => v) ?
+                    "SUSPICIOUS - Possible hidden data detected" :
+                    "CLEAN - No obvious signs of steganography";
+                
+                result += `\nConclusion: ${conclusion}\n`;
+                result += `Recommendations: ${getStegRecommendations(conclusion)}\n`;
+                
+                output.innerHTML = result;
+                analysisResults.steganography = {
+                    fileName: file.name,
+                    indicators: indicators,
+                    conclusion: conclusion
+                };
+                
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 500);
+            } catch (error) {
+                output.innerHTML = `<span class="danger">[!] Error analyzing image: ${error.message}</span>`;
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        }
+
+        function checkLSB(data) {
+            // Simple LSB detection (very basic)
+            const sampleSize = Math.min(1000, data.length);
+            let lsbCount = 0;
+            
+            for (let i = 0; i < sampleSize; i++) {
+                if ((data[i] & 1) === 1) lsbCount++;
+            }
+            
+            const ratio = lsbCount / sampleSize;
+            return ratio > 0.6 || ratio < 0.4; // Suspicious if not ~50%
+        }
+
+        function checkEOF(data) {
+            // Check for extra data after expected EOF
+            if (data.length > 1000000) { // For large files
+                const trailer = new Uint8Array(data.slice(-1024));
+                return trailer.some(b => b !== 0);
+            }
+            return false;
+        }
+
+        function checkSuspiciousEXIF(data) {
+            // Check for suspicious EXIF data
+            const str = new TextDecoder().decode(data.slice(0, 1000));
+            return str.includes('steg') || str.includes('hidden') || 
+                   str.includes('secret') || str.includes('password');
+        }
+
+        function checkHeaderAnomalies(data) {
+            // Check for header anomalies
+            if (data.length > 100) {
+                const header = data.slice(0, 100);
+                const avg = header.reduce((a, b) => a + b, 0) / header.length;
+                return avg < 10 || avg > 245; // Suspicious if very dark or light
+            }
+            return false;
+        }
+
+        function getStegRecommendations(conclusion) {
+            if (conclusion.includes("SUSPICIOUS")) {
+                return "1. Analyze with professional steganalysis tools\n2. Check file with multiple methods\n3. Consider file origin";
+            }
+            return "1. No action needed\n2. For sensitive cases, verify with additional tools";
+        }
+
+        // 6. Text Steganography Extractor
+        function extractHiddenText() {
+            const textInput = document.getElementById('text-input');
+            const method = document.getElementById('extraction-method').value;
+            const output = document.getElementById('text-output');
+            const text = textInput.value;
+            
+            if (!text) {
+                output.innerHTML = '<span class="danger">[!] Please enter text first</span>';
+                return;
+            }
+            
+            let hiddenMessage = "";
+            const words = text.split(/\s+/);
+            const lines = text.split('\n');
+            
+            switch(method) {
+                case 'first-letters':
+                    hiddenMessage = extractFirstLetters(words);
+                    break;
+                case 'last-letters':
+                    hiddenMessage = extractLastLetters(words);
+                    break;
+                case 'every-nth':
+                    const nthValue = document.getElementById('nth-value').value || 3;
+                    hiddenMessage = extractEveryNth(text, parseInt(nthValue));
+                    break;
+                case 'brackets':
+                    hiddenMessage = extractBrackets(text);
+                    break;
+                default:
+                    hiddenMessage = "Invalid extraction method";
+            }
+            
+            let result = `=== HIDDEN MESSAGE EXTRACTION ===\n\n`;
+            result += `Method: ${method}\n`;
+            result += `Original Text Length: ${text.length} characters\n\n`;
+            result += `Extracted Message:\n${hiddenMessage || "No message found"}\n`;
+            
+            output.innerHTML = `<pre>${result}</pre>`;
+            analysisResults.hiddenText = {
+                method: method,
+                message: hiddenMessage
+            };
+        }
+
+        function extractFirstLetters(words) {
+            return words.filter(word => word.length > 0).map(word => word[0]).join('');
+        }
+
+        function extractLastLetters(words) {
+            return words.filter(word => word.length > 0).map(word => word[word.length - 1]).join('');
+        }
+
+        function extractEveryNth(text, n) {
+            let result = "";
+            for (let i = n - 1; i < text.length; i += n) {
+                result += text[i];
+            }
+            return result;
+        }
+
+        function extractBrackets(text) {
+            const matches = text.match(/\[(.*?)\]/g);
+            return matches ? matches.map(m => m.slice(1, -1)).join(' ') : "";
+        }
+
+        // 7. Network Forensic Toolkit
+        async function runNetworkTool() {
+            const tool = document.getElementById('network-tool').value;
+            const input = document.getElementById('network-input').value.trim();
+            const output = document.getElementById('network-output');
+            
+            if (!input) {
+                output.innerHTML = '<span class="danger">[!] Please enter an IP/domain/URL first</span>';
+                return;
+            }
+            
+            output.innerHTML = '<span class="info">[+] Running network analysis... Please wait</span>';
+            
+            try {
+                let result = "";
+                
+                switch(tool) {
+                    case 'ping':
+                        result = await simulatePing(input);
+                        break;
+                    case 'traceroute':
+                        result = await simulateTraceroute(input);
+                        break;
+                    case 'whois':
+                        result = await simulateWhois(input);
+                        break;
+                    case 'dns':
+                        result = await simulateDNSLookup(input);
+                        break;
+                    case 'headers':
+                        result = await simulateHTTPHeaders(input);
+                        break;
+                    default:
+                        result = "Invalid tool selected";
+                }
+                
+                output.innerHTML = `=== NETWORK ANALYSIS: ${tool.toUpperCase()} ===\n\n${result}`;
+                analysisResults.network = {
+                    tool: tool,
+                    target: input,
+                    result: result
+                };
+            } catch (error) {
+                output.innerHTML = `<span class="danger">[!] Error in network analysis: ${error.message}</span>`;
+            }
+        }
+
+        async function simulatePing(target) {
+            // Simulated ping response
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return `Pinging ${target} [127.0.0.1] with 32 bytes of data:
+Reply from 127.0.0.1: bytes=32 time=12ms TTL=64
+Reply from 127.0.0.1: bytes=32 time=8ms TTL=64
+Reply from 127.0.0.1: bytes=32 time=10ms TTL=64
+Reply from 127.0.0.1: bytes=32 time=15ms TTL=64
+
+Ping statistics for 127.0.0.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 8ms, Maximum = 15ms, Average = 11ms`;
+        }
+
+        async function simulateTraceroute(target) {
+            // Simulated traceroute response
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return `Tracing route to ${target} [127.0.0.1]
+over a maximum of 30 hops:
+
+  1     2 ms     1 ms     1 ms  192.168.1.1
+  2    10 ms     9 ms    11 ms  10.0.0.1
+  3    15 ms    14 ms    13 ms  203.0.113.1
+  4    20 ms    18 ms    19 ms  198.51.100.1
+  5    25 ms    24 ms    23 ms  127.0.0.1
+
+Trace complete.`;
+        }
+
+        async function simulateWhois(target) {
+            // Simulated WHOIS response
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return `WHOIS lookup for ${target}:
+
+Domain Name: EXAMPLE.COM
+Registry Domain ID: 2336799_DOMAIN_COM-VRSN
+Registrar WHOIS Server: whois.iana.org
+Registrar URL: http://example.com
+Updated Date: 2023-01-01T00:00:00Z
+Creation Date: 1995-08-01T00:00:00Z
+Registry Expiry Date: 2024-07-31T00:00:00Z
+Registrar: Example Registrar, Inc.
+Registrar IANA ID: 1234
+Registrar Abuse Contact Email: abuse@example.com
+Registrar Abuse Contact Phone: +1.1234567890
+
+Domain Status: clientDeleteProhibited https://icann.org/epp#clientDeleteProhibited
+Domain Status: clientTransferProhibited https://icann.org/epp#clientTransferProhibited
+Domain Status: clientUpdateProhibited https://icann.org/epp#clientUpdateProhibited
+Domain Status: serverDeleteProhibited https://icann.org/epp#serverDeleteProhibited
+Domain Status: serverTransferProhibited https://icann.org/epp#serverTransferProhibited
+Domain Status: serverUpdateProhibited https://icann.org/epp#serverUpdateProhibited
+
+Name Server: NS1.EXAMPLE.COM
+Name Server: NS2.EXAMPLE.COM
+
+DNSSEC: unsigned
+URL of the ICANN Whois Inaccuracy Complaint Form: https://www.icann.org/wicf/`;
+        }
+
+        async function simulateDNSLookup(target) {
+            // Simulated DNS lookup
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return `DNS records for ${target}:
+
+A Records:
+example.com.     3600    IN    A    93.184.216.34
+
+AAAA Records:
+example.com.     3600    IN    AAAA    2606:2800:220:1:248:1893:25c8:1946
+
+MX Records:
+example.com.     3600    IN    MX    0    .
+
+NS Records:
+example.com.     172800    IN    NS    a.iana-servers.net.
+example.com.     172800    IN    NS    b.iana-servers.net.
+
+TXT Records:
+example.com.     3600    IN    TXT    "v=spf1 -all"`;
+        }
+
+        async function simulateHTTPHeaders(url) {
+            // Simulated HTTP headers
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return `HTTP headers for ${url}:
+
+HTTP/1.1 200 OK
+Date: Wed, 09 Jul 2025 19:17:44 GMT
+Server: Apache/2.4.41 (Unix)
+Content-Type: text/html; charset=UTF-8
+Content-Length: 12345
+Connection: keep-alive
+X-Powered-By: PHP/7.4.12
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Content-Security-Policy: default-src 'self'`;
+        }
+
+        // 8. URL Analyzer
+        async function analyzeURL() {
+            const urlInput = document.getElementById('url-input').value.trim();
+            const output = document.getElementById('url-output');
+            
+            if (!urlInput) {
+                output.innerHTML = '<span class="danger">[!] Please enter a URL first</span>';
+                return;
+            }
+            
+            output.innerHTML = '<span class="info">[+] Analyzing URL... Please wait</span>';
+            
+            try {
+                const url = new URL(urlInput.startsWith('http') ? urlInput : `https://${urlInput}`);
+                const analysis = analyzeURLStructure(url);
+                const threats = detectURLThreats(url);
+                const recommendations = getURLRecommendations(threats);
+                
+                let result = `=== URL ANALYSIS REPORT ===\n\n`;
+                result += `URL: ${url.href}\n`;
+                result += `Domain: ${url.hostname}\n`;
+                result += `Protocol: ${url.protocol}\n`;
+                result += `Path: ${url.pathname}\n`;
+                result += `Query Parameters: ${url.search || 'None'}\n\n`;
+                result += `Analysis:\n${analysis}\n\n`;
+                result += `Potential Threats:\n${threats.join('\n') || 'None detected'}\n\n`;
+                result += `Recommendations:\n${recommendations}\n`;
+                
+                output.innerHTML = result;
+                analysisResults.url = {
+                    url: url.href,
+                    analysis: analysis,
+                    threats: threats,
+                    recommendations: recommendations
+                };
+            } catch (error) {
+                output.innerHTML = `<span class="danger">[!] Invalid URL: ${error.message}</span>`;
+            }
+        }
+
+        function analyzeURLStructure(url) {
+            const analysis = [];
+            
+            // Check for IP address instead of domain
+            if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(url.hostname)) {
+                analysis.push("⚠️ Uses IP address instead of domain name");
+            }
+            
+            // Check for unusual ports
+            if (url.port && url.port !== "80" && url.port !== "443") {
+                analysis.push(`⚠️ Uses non-standard port: ${url.port}`);
+            }
+            
+            // Check for long subdomains
+            if (url.hostname.split('.').length > 3) {
+                analysis.push("⚠️ Has multiple subdomains which could be suspicious");
+            }
+            
+            // Check for @ symbol in URL
+            if (url.href.includes('@')) {
+                analysis.push("⚠️ Contains '@' symbol which could indicate credential embedding");
+            }
+            
+            // Check for encoded characters
+            if (decodeURIComponent(url.href) !== url.href) {
+                analysis.push("⚠️ Contains encoded characters which could hide malicious content");
+            }
+            
+            return analysis.length > 0 ? analysis.join('\n') : "No structural anomalies detected";
+        }
+
+        function detectURLThreats(url) {
+            const threats = [];
+            const hostname = url.hostname.toLowerCase();
+            
+            // Check for known malicious patterns
+            if (hostname.includes('phish') || hostname.includes('scam')) {
+                threats.push("Contains suspicious keywords in domain");
+            }
+            
+            // Check for URL shorteners
+            const shorteners = ['bit.ly', 'goo.gl', 'tinyurl.com', 'ow.ly'];
+            if (shorteners.some(s => hostname.includes(s))) {
+                threats.push("Uses URL shortener - destination obscured");
+            }
+            
+            // Check for executable extensions
+            if (url.pathname.toLowerCase().match(/\.(exe|js|vbs|bat|cmd)$/)) {
+                threats.push("Contains executable file extension");
+            }
+            
+            return threats;
+        }
+
+        function getURLRecommendations(threats) {
+            if (threats.includes("Contains suspicious keywords in domain")) {
+                return "1. Avoid this URL\n2. Verify the domain owner\n3. Check for website reviews";
+            }
+            
+            if (threats.includes("Uses URL shortener - destination obscured")) {
+                return "1. Avoid clicking on shortened URLs\n2. Use URL expander services to reveal the destination";
+            }
+            
+            if (threats.includes("Contains executable file extension")) {
+                return "1. Do not download or execute files from this URL\n2. Scan the URL with antivirus";
+            }
+            
+            return "1. Ensure the URL uses HTTPS\n2. Check the domain reputation\n3. Be cautious of unknown links";
+        }
+
+        // Conclusion report generation
+        function generateConclusion() {
+            let report = "=== FINAL FORENSIC CONCLUSION ===\n\n";
+            if (analysisResults.metadata) {
+                report += "Metadata Analysis:\n";
+                for (const [k, v] of Object.entries(analysisResults.metadata)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (analysisResults.fileHash) {
+                report += "File Hash:\n";
+                for (const [k, v] of Object.entries(analysisResults.fileHash)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (analysisResults.suspiciousFile) {
+                report += "Suspicious File Analysis:\n";
+                for (const [k, v] of Object.entries(analysisResults.suspiciousFile)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (analysisResults.password) {
+                report += "Password Strength:\n";
+                for (const [k, v] of Object.entries(analysisResults.password)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (analysisResults.steganography) {
+                report += "Steganography:\n";
+                for (const [k, v] of Object.entries(analysisResults.steganography)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (analysisResults.hiddenText) {
+                report += "Hidden Text Extraction:\n";
+                for (const [k, v] of Object.entries(analysisResults.hiddenText)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (analysisResults.network) {
+                report += "Network Analysis:\n";
+                for (const [k, v] of Object.entries(analysisResults.network)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (analysisResults.url) {
+                report += "URL Analysis:\n";
+                for (const [k, v] of Object.entries(analysisResults.url)) {
+                    report += `- ${k}: ${v}\n`;
+                }
+                report += "\n";
+            }
+            if (report.trim() === "=== FINAL FORENSIC CONCLUSION ===") {
+                report += "\nNo analysis results available.";
+            }
+            document.getElementById('conclusion-output').textContent = report;
+        }
+    </script>
+</body>
+</html>
